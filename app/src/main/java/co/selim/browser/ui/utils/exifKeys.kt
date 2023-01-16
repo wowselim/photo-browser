@@ -17,3 +17,17 @@ val ExifKey.displayText: TextRef
         MODEL -> TextRef.stringRes(R.string.model)
         SHUTTER_SPEED -> TextRef.stringRes(R.string.shutter_speed)
     }
+
+fun ExifKey.formatValue(value: String): String {
+    return when (this) {
+        APERTURE -> "F$value"
+        SHUTTER_SPEED -> "${value}s"
+        FOCAL_LENGTH,
+        DATE_TIME,
+        FLASH_STATUS,
+        ISO,
+        LENS,
+        MAKE,
+        MODEL -> value
+    }
+}

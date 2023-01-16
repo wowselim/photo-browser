@@ -43,6 +43,7 @@ import co.selim.browser.model.Album
 import co.selim.browser.model.Photo
 import co.selim.browser.ui.theme.BrowserTheme
 import co.selim.browser.ui.utils.displayText
+import co.selim.browser.ui.utils.formatValue
 import co.selim.browser.ui.utils.src
 import co.selim.browser.ui.utils.thumbnailSrc
 import coil.compose.AsyncImage
@@ -222,7 +223,10 @@ private fun photoView(
                         text = exifKey.displayText.resolve(LocalContext.current),
                         modifier = Modifier.align(Alignment.CenterStart)
                     )
-                    Text(text = value, modifier = Modifier.align(Alignment.CenterEnd))
+                    Text(
+                        text = exifKey.formatValue(value),
+                        modifier = Modifier.align(Alignment.CenterEnd)
+                    )
                 }
             }
 
