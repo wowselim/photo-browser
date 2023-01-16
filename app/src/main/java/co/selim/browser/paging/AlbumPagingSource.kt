@@ -2,11 +2,13 @@ package co.selim.browser.paging
 
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
-import co.selim.browser.api.apiClient
+import co.selim.browser.api.SelimCoClient
 import co.selim.browser.api.body
 import co.selim.browser.model.Album
 
-class AlbumPagingSource : PagingSource<Int, Album>() {
+class AlbumPagingSource(
+    private val apiClient: SelimCoClient
+) : PagingSource<Int, Album>() {
 
     override fun getRefreshKey(state: PagingState<Int, Album>): Int {
         return ((state.anchorPosition ?: 0) - state.config.initialLoadSize / 2).coerceAtLeast(0)
