@@ -56,8 +56,6 @@ class MainActivity : ComponentActivity() {
 
                         NavHost(navController = navController, startDestination = "albums") {
                             composable("albums") {
-                                Text(text = "Albums", Modifier.padding(24.dp), fontSize = 16.sp)
-
                                 LazyColumn {
                                     items(items = albums, key = { it.id }) { album ->
                                         if (album != null) {
@@ -80,7 +78,6 @@ class MainActivity : ComponentActivity() {
 
                                             Divider(color = Color.White, thickness = 8.dp)
                                         }
-
                                     }
                                 }
                             }
