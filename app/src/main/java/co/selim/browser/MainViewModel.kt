@@ -14,12 +14,22 @@ import co.selim.browser.paging.AlbumPagingSource
 import kotlinx.coroutines.flow.Flow
 
 class MainViewModel : ViewModel() {
+
+    private val inMemoryAlbumCache = mutableMapOf<String, Album>()
+
     suspend fun loadAlbum(slug: String): NetworkResource<Album> {
+        val existingAlbum = inMemoryAlbumCache[slug]
+        if (existingAlbum != null) {
+            return NetworkResource.Loaded(existingAlbum)
+        }
+
         return try {
             val response = apiClient.getAlbumBySlug(slug)
 
             if (response.isSuccessful) {
-                NetworkResource.Loaded(response.body)
+                val album = response.body
+                inMemoryAlbumCache[slug] = album
+                NetworkResource.Loaded(album)
             } else {
                 NetworkResource.Error
             }
