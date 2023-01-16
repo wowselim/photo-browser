@@ -4,18 +4,29 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.Divider
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.tooling.preview.Preview
-import co.selim.browser.model.Album
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.items
 import co.selim.browser.ui.theme.BrowserTheme
-import kotlinx.coroutines.flow.StateFlow
+import co.selim.browser.ui.utils.thumbnailSrc
+import coil.compose.AsyncImage
 
 class MainActivity : ComponentActivity() {
 
@@ -30,26 +41,33 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colors.background
                 ) {
-                    LazyColumn {
-                        item {
-                            AlbumTitleItem(albumFlow = viewModel.album)
-                            viewModel.loadWildlifeAlbum()
-                        }
+                    val albums = viewModel.getAlbums().collectAsLazyPagingItems()
 
-                        item {
-                            Text(text = BuildConfig.apiKey)
-                        }
+                    Column {
+                        Text(text = "selim.co", Modifier.padding(24.dp), fontSize = 24.sp)
 
-                        item {
-                            Greeting("Android")
-                        }
+                        Text(text = "Albums", Modifier.padding(24.dp), fontSize = 16.sp)
 
-                        item {
-                            Text(text = "Item 1")
-                        }
+                        LazyColumn {
+                            items(items = albums, key = { it.id }) { album ->
+                                if (album != null) {
+                                    Box(modifier = Modifier.fillMaxSize()) {
+                                        AsyncImage(
+                                            model = album.coverPhoto.thumbnailSrc,
+                                            contentDescription = "${album.title} cover photo",
+                                            modifier = Modifier.fillMaxSize()
+                                        )
+                                        TextWithShadow(
+                                            text = album.title,
+                                            Modifier
+                                                .padding(24.dp)
+                                                .align(Alignment.BottomStart),
+                                        )
+                                    }
+                                }
 
-                        items(3) { i ->
-                            Text(text = "Item ${i + 1}")
+                                Divider(color = Color.White, thickness = 8.dp)
+                            }
                         }
                     }
                 }
@@ -59,24 +77,28 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun AlbumTitleItem(albumFlow: StateFlow<MainViewModel.NetworkResource<Album>>) {
-    val state = albumFlow.collectAsState()
-    when (val resource = state.value) {
-        MainViewModel.NetworkResource.Error -> Text(text = "Failed to load album")
-        is MainViewModel.NetworkResource.Loaded -> Text(text = resource.value.title)
-        MainViewModel.NetworkResource.Loading -> Text(text = "Loading…")
-    }
-}
-
-@Composable
-fun Greeting(name: String) {
-    Text(text = "Hello $name!")
+fun TextWithShadow(
+    text: String,
+    modifier: Modifier
+) {
+    Text(
+        text = text,
+        modifier = modifier,
+        fontSize = 24.sp,
+        style = MaterialTheme.typography.h4.copy(
+            shadow = Shadow(
+                color = Color.White,
+                offset = Offset(2f, 2f),
+                blurRadius = 24f,
+            )
+        )
+    )
 }
 
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {
     BrowserTheme {
-        Greeting("Android")
+        Text(text = "Android")
     }
 }

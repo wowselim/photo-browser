@@ -5,11 +5,12 @@ import co.selim.browser.model.AlbumPage
 import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface SelimCoClient {
 
     @GET("/api/albums")
-    suspend fun getAllAlbums(): Response<AlbumPage>
+    suspend fun getAllAlbums(@Query("page") page: Int): Response<AlbumPage>
 
     @GET("/api/albums/{slug}")
     suspend fun getAlbumBySlug(@Path("slug") slug: String): Response<Album>
