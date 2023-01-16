@@ -1,3 +1,18 @@
 <resources>
     <string name="app_name">Photo Browser</string>
+    <string name="aperture">Aperture</string>
+    <string name="date_time">Date &amp; Time</string>
+    <string name="flash_status">Flash Status</string>
+    <string name="focal_length">Focal Length</string>
+    <string name="iso">ISO</string>
+    <string name="lens">Lens</string>
+    <string name="make">Camera Make</string>
+    <string name="model">Camera Model</string>
+    <string name="shutter_speed">Shutter Speed</string>
+    <string name="loading">Loading…</string>
+    <string name="loading_failed_photo">Failed to load photo</string>
+    <string name="loading_failed_album">Failed to load album</string>
+    <string name="title_albums">Albums</string>
+    <string name="title_photo">Photo Details</string>
+    <string name="title_app">selim.co</string>
 </resources>
