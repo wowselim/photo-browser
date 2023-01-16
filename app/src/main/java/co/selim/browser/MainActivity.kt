@@ -216,7 +216,6 @@ private fun photoView(
                     .fillMaxSize()
             )
 
-            Log.e("MainActivity", photo.exifData.toString())
             photo.exifData.forEach { (exifKey, value) ->
                 Box(modifier = Modifier.fillMaxSize()) {
                     Text(
