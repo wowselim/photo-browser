@@ -1,10 +1,10 @@
 package co.selim.browser
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,18 +17,19 @@ import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -80,16 +81,10 @@ class MainActivity : ComponentActivity() {
                                 })
                             ) { backStackEntry ->
                                 val slug = backStackEntry.arguments?.getString("slug")!!
-                                val (album, setAlbum) = remember {
-                                    mutableStateOf<NetworkResource<Album>>(
-                                        NetworkResource.Loading
-                                    )
-                                }
-                                LaunchedEffect(key1 = slug) {
-                                    setAlbum(viewModel.loadAlbum(slug))
-                                }
+                                LaunchedEffect(key1 = slug) { viewModel.loadAlbum(slug) }
 
-                                when (album) {
+                                val albumState = viewModel.albumFlow.collectAsState()
+                                when (val album = albumState.value) {
                                     NetworkResource.Error -> Text(text = stringResource(id = R.string.loading_failed_album))
                                     is NetworkResource.Loaded -> Column(
                                         content = albumView(
@@ -108,20 +103,13 @@ class MainActivity : ComponentActivity() {
                                 })
                             ) { backStackEntry ->
                                 val uri = backStackEntry.arguments?.getString("uri")!!
-                                val (photo, setPhoto) = remember {
-                                    mutableStateOf<NetworkResource<Photo>>(
-                                        NetworkResource.Loading
-                                    )
-                                }
-                                LaunchedEffect(key1 = uri) {
-                                    setPhoto(viewModel.loadPhoto(uri))
-                                }
+                                LaunchedEffect(key1 = uri) { viewModel.loadPhoto(uri) }
 
-                                when (photo) {
+                                val photoState = viewModel.photoFlow.collectAsState()
+
+                                when (val photo = photoState.value) {
                                     NetworkResource.Error -> Text(text = stringResource(id = R.string.loading_failed_photo))
-                                    is NetworkResource.Loaded -> Column(
-                                        content = photoView(photo.value)
-                                    )
+                                    is NetworkResource.Loaded -> Column(content = photoView(photo.value))
                                     NetworkResource.Loading -> Text(text = stringResource(id = R.string.loading))
                                 }
                             }
@@ -152,6 +140,7 @@ private fun albumsView(
                         modifier = Modifier
                             .fillMaxSize()
                             .clickable { navController.navigate("albums/${album.slug}") }) {
+
                         AsyncImage(
                             model = album.coverPhoto.thumbnailSrc,
                             contentDescription = "${album.title} cover photo",
@@ -160,11 +149,10 @@ private fun albumsView(
                         TextWithShadow(
                             text = album.title,
                             Modifier
-                                .padding(24.dp)
+                                .padding(horizontal = 24.dp, vertical = 16.dp)
                                 .align(Alignment.BottomStart),
                         )
                     }
-
 
                     Divider(color = Color.White, thickness = 8.dp)
                 }
@@ -176,6 +164,7 @@ private fun albumsView(
 private fun albumView(
     album: Album,
     navController: NavHostController,
+    modifier: Modifier = Modifier,
 ): @Composable (ColumnScope.() -> Unit) =
     {
         Text(
@@ -190,7 +179,9 @@ private fun albumView(
                     contentDescription = "Photo",
                     modifier = Modifier
                         .fillMaxSize()
-                        .clickable { navController.navigate("photos/${photo.uri}") },
+                        .clickable { navController.navigate("photos/${photo.uri}") }
+                        .animateContentSize(),
+                    contentScale = ContentScale.FillWidth,
                 )
 
                 Divider(color = Color.White, thickness = 48.dp)
@@ -201,6 +192,7 @@ private fun albumView(
 @Composable
 private fun photoView(
     photo: Photo,
+    modifier: Modifier = Modifier,
 ): @Composable (ColumnScope.() -> Unit) =
     {
         Text(
@@ -214,10 +206,14 @@ private fun photoView(
                 contentDescription = "Photo",
                 modifier = Modifier
                     .fillMaxSize()
+                    .animateContentSize(),
+                contentScale = ContentScale.FillWidth,
             )
 
             photo.exifData.forEach { (exifKey, value) ->
-                Box(modifier = Modifier.fillMaxSize()) {
+                Box(modifier = Modifier
+                    .fillMaxSize()
+                    .padding(4.dp)) {
                     Text(
                         text = exifKey.displayText.resolve(LocalContext.current),
                         modifier = Modifier.align(Alignment.CenterStart)
@@ -236,7 +232,7 @@ private fun photoView(
 @Composable
 fun TextWithShadow(
     text: String,
-    modifier: Modifier
+    modifier: Modifier = Modifier,
 ) {
     Text(
         text = text,
@@ -244,7 +240,7 @@ fun TextWithShadow(
         fontSize = 24.sp,
         style = MaterialTheme.typography.h4.copy(
             shadow = Shadow(
-                color = Color.White,
+                color = Color.LightGray,
                 offset = Offset(2f, 2f),
                 blurRadius = 24f,
             )
