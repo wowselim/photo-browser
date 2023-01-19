@@ -34,7 +34,7 @@ val apiModule = module {
 
                 chain.proceed(authenticatedRequest)
             }
-            .cache(Cache(androidContext().cacheDir, 1024 * 10))
+            .cache(Cache(androidContext().cacheDir, 10_485_760)) // 10 MiB
             .build()
 
         val moshi: Moshi = Moshi.Builder()
