@@ -3,8 +3,6 @@ package co.selim.browser
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,7 +14,6 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,11 +44,17 @@ import co.selim.browser.ui.utils.displayText
 import co.selim.browser.ui.utils.formatValue
 import co.selim.browser.ui.utils.src
 import co.selim.browser.ui.utils.thumbnailSrc
+import co.selim.browser.viewmodel.AlbumViewModel
+import co.selim.browser.viewmodel.IndexViewModel
+import co.selim.browser.viewmodel.PhotoViewModel
+import coil.ImageLoader
 import coil.compose.AsyncImage
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
-class MainActivity : ComponentActivity() {
+class MainActivity : ComponentActivity(), KoinComponent {
 
-    private val viewModel: MainViewModel by viewModels()
+    private val imageLoader: ImageLoader by inject()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,12 +65,17 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colors.background
                 ) {
+                    val viewModel = viewModel<IndexViewModel>()
                     val albums = viewModel.albums.collectAsLazyPagingItems()
 
                     val navController = rememberNavController()
 
                     Column {
-                        Text(text = "selim.co", Modifier.padding(24.dp), fontSize = 24.sp)
+                        Text(
+                            text = stringResource(id = R.string.title_app),
+                            Modifier.padding(24.dp),
+                            fontSize = 24.sp
+                        )
 
                         NavHost(navController = navController, startDestination = "albums") {
                             composable("albums") {
@@ -81,7 +89,12 @@ class MainActivity : ComponentActivity() {
                                 })
                             ) { backStackEntry ->
                                 val slug = backStackEntry.arguments?.getString("slug")!!
-                                LaunchedEffect(key1 = slug) { viewModel.loadAlbum(slug) }
+                                val viewModel = viewModel(
+                                    key = slug,
+                                    initializer = {
+                                        AlbumViewModel(slug)
+                                    }
+                                )
 
                                 val albumState = viewModel.albumFlow.collectAsState()
                                 when (val album = albumState.value) {
@@ -103,7 +116,12 @@ class MainActivity : ComponentActivity() {
                                 })
                             ) { backStackEntry ->
                                 val uri = backStackEntry.arguments?.getString("uri")!!
-                                LaunchedEffect(key1 = uri) { viewModel.loadPhoto(uri) }
+                                val viewModel = viewModel(
+                                    key = uri,
+                                    initializer = {
+                                        PhotoViewModel(uri)
+                                    }
+                                )
 
                                 val photoState = viewModel.photoFlow.collectAsState()
 
@@ -119,115 +137,118 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-}
 
-@Composable
-private fun albumsView(
-    albums: LazyPagingItems<Album>,
-    navController: NavHostController,
-): @Composable (ColumnScope.() -> Unit) =
-    {
-        Text(
-            text = stringResource(id = R.string.title_albums),
-            Modifier.padding(24.dp),
-            fontSize = 18.sp
-        )
+    @Composable
+    private fun albumsView(
+        albums: LazyPagingItems<Album>,
+        navController: NavHostController,
+    ): @Composable (ColumnScope.() -> Unit) =
+        {
+            Text(
+                text = stringResource(id = R.string.title_albums),
+                Modifier.padding(24.dp),
+                fontSize = 18.sp
+            )
 
-        LazyColumn {
-            items(items = albums, key = { it.id }) { album ->
-                if (album != null) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clickable { navController.navigate("albums/${album.slug}") }) {
+            LazyColumn {
+                items(items = albums, key = { it.id }) { album ->
+                    if (album != null) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clickable { navController.navigate("albums/${album.slug}") }) {
 
-                        AsyncImage(
-                            model = album.coverPhoto.thumbnailSrc,
-                            contentDescription = "${album.title} cover photo",
-                            modifier = Modifier.fillMaxSize(),
-                        )
-                        TextWithShadow(
-                            text = album.title,
-                            Modifier
-                                .padding(horizontal = 24.dp, vertical = 16.dp)
-                                .align(Alignment.BottomStart),
-                        )
+                            AsyncImage(
+                                model = album.coverPhoto.thumbnailSrc,
+                                contentDescription = "${album.title} cover photo",
+                                modifier = Modifier.fillMaxSize(),
+                                imageLoader = imageLoader
+                            )
+                            TextWithShadow(
+                                text = album.title,
+                                Modifier
+                                    .padding(horizontal = 24.dp, vertical = 16.dp)
+                                    .align(Alignment.BottomStart),
+                            )
+                        }
+
+                        Divider(color = Color.White, thickness = 8.dp)
                     }
-
-                    Divider(color = Color.White, thickness = 8.dp)
                 }
             }
         }
-    }
 
-@Composable
-private fun albumView(
-    album: Album,
-    navController: NavHostController,
-    modifier: Modifier = Modifier,
-): @Composable (ColumnScope.() -> Unit) =
-    {
-        Text(
-            text = album.title,
-            Modifier.padding(24.dp),
-            fontSize = 18.sp
-        )
-        LazyColumn {
-            items(album.photos) { photo ->
+    @Composable
+    private fun albumView(
+        album: Album,
+        navController: NavHostController,
+        modifier: Modifier = Modifier,
+    ): @Composable (ColumnScope.() -> Unit) =
+        {
+            Text(
+                text = album.title,
+                Modifier.padding(24.dp),
+                fontSize = 18.sp
+            )
+            LazyColumn {
+                items(album.photos) { photo ->
+                    AsyncImage(
+                        model = photo.thumbnailSrc,
+                        contentDescription = "Photo",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable { navController.navigate("photos/${photo.uri}") },
+                        contentScale = ContentScale.FillWidth,
+                        imageLoader = imageLoader,
+                    )
+
+                    Divider(color = Color.White, thickness = 48.dp)
+                }
+            }
+        }
+
+    @Composable
+    private fun photoView(
+        photo: Photo,
+        modifier: Modifier = Modifier,
+    ): @Composable (ColumnScope.() -> Unit) =
+        {
+            Text(
+                text = stringResource(id = R.string.title_photo),
+                Modifier.padding(24.dp),
+                fontSize = 18.sp
+            )
+            Column(modifier = Modifier.verticalScroll(state = rememberScrollState())) {
                 AsyncImage(
-                    model = photo.thumbnailSrc,
+                    model = photo.src,
                     contentDescription = "Photo",
                     modifier = Modifier
-                        .fillMaxSize()
-                        .clickable { navController.navigate("photos/${photo.uri}") }
-                        .animateContentSize(),
+                        .fillMaxSize(),
                     contentScale = ContentScale.FillWidth,
+                    imageLoader = imageLoader
                 )
+
+                photo.exifData.forEach { (exifKey, value) ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(4.dp)
+                    ) {
+                        Text(
+                            text = exifKey.displayText.resolve(LocalContext.current),
+                            modifier = Modifier.align(Alignment.CenterStart)
+                        )
+                        Text(
+                            text = exifKey.formatValue(value),
+                            modifier = Modifier.align(Alignment.CenterEnd)
+                        )
+                    }
+                }
 
                 Divider(color = Color.White, thickness = 48.dp)
             }
         }
-    }
-
-@Composable
-private fun photoView(
-    photo: Photo,
-    modifier: Modifier = Modifier,
-): @Composable (ColumnScope.() -> Unit) =
-    {
-        Text(
-            text = stringResource(id = R.string.title_photo),
-            Modifier.padding(24.dp),
-            fontSize = 18.sp
-        )
-        Column(modifier = Modifier.verticalScroll(state = rememberScrollState())) {
-            AsyncImage(
-                model = photo.src,
-                contentDescription = "Photo",
-                modifier = Modifier
-                    .fillMaxSize()
-                    .animateContentSize(),
-                contentScale = ContentScale.FillWidth,
-            )
-
-            photo.exifData.forEach { (exifKey, value) ->
-                Box(modifier = Modifier
-                    .fillMaxSize()
-                    .padding(4.dp)) {
-                    Text(
-                        text = exifKey.displayText.resolve(LocalContext.current),
-                        modifier = Modifier.align(Alignment.CenterStart)
-                    )
-                    Text(
-                        text = exifKey.formatValue(value),
-                        modifier = Modifier.align(Alignment.CenterEnd)
-                    )
-                }
-            }
-
-            Divider(color = Color.White, thickness = 48.dp)
-        }
-    }
+}
 
 @Composable
 fun TextWithShadow(

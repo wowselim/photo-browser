@@ -2,6 +2,7 @@ package co.selim.browser
 
 import android.app.Application
 import co.selim.browser.api.apiModule
+import co.selim.browser.ui.coilModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
@@ -15,7 +16,7 @@ class PhotoBrowserApplication : Application() {
                 androidLogger()
             }
             androidContext(this@PhotoBrowserApplication)
-            modules(apiModule)
+            modules(apiModule, coilModule)
         }
     }
 }
