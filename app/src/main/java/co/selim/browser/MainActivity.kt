@@ -71,15 +71,10 @@ class MainActivity : ComponentActivity(), KoinComponent {
                     val navController = rememberNavController()
 
                     Column {
-                        Text(
-                            text = stringResource(id = R.string.title_app),
-                            Modifier.padding(24.dp),
-                            fontSize = 24.sp
-                        )
 
                         NavHost(navController = navController, startDestination = "albums") {
                             composable("albums") {
-                                Column(content = albumsView(albums, navController))
+                                Column(content = indexView(albums, navController))
                             }
 
                             composable(
@@ -139,11 +134,17 @@ class MainActivity : ComponentActivity(), KoinComponent {
     }
 
     @Composable
-    private fun albumsView(
+    private fun indexView(
         albums: LazyPagingItems<Album>,
         navController: NavHostController,
     ): @Composable (ColumnScope.() -> Unit) =
         {
+            Text(
+                text = stringResource(id = R.string.title_app),
+                Modifier.padding(24.dp),
+                fontSize = 24.sp
+            )
+
             Text(
                 text = stringResource(id = R.string.title_albums),
                 Modifier.padding(24.dp),
