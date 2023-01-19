@@ -65,8 +65,6 @@ class MainActivity : ComponentActivity(), KoinComponent {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colors.background
                 ) {
-                    val viewModel = viewModel<IndexViewModel>()
-                    val albums = viewModel.albums.collectAsLazyPagingItems()
 
                     val navController = rememberNavController()
 
@@ -74,6 +72,8 @@ class MainActivity : ComponentActivity(), KoinComponent {
 
                         NavHost(navController = navController, startDestination = "albums") {
                             composable("albums") {
+                                val viewModel = viewModel<IndexViewModel>()
+                                val albums = viewModel.albums.collectAsLazyPagingItems()
                                 Column(content = indexView(albums, navController))
                             }
 
